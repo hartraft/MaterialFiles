@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="storage_add_storage_s3_server">S3-compatible server</string>
+</resources>
