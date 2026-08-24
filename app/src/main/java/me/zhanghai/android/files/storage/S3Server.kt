@@ -14,6 +14,7 @@ import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.provider.s3.S3FileSystemProvider
 import me.zhanghai.android.files.util.createIntent
+import me.zhanghai.android.files.util.putArgs
 import kotlin.random.Random
 
 @Parcelize
@@ -64,7 +65,7 @@ class S3Server(
         }
 
     override fun createEditIntent(): Intent =
-        AddStorageDialogActivity::class.createIntent()
+        EditS3ServerActivity::class.createIntent().putArgs(EditS3ServerActivity.Args(this))
 
     override fun toString(): String = "S3Server($endpoint/$bucket)"
 }
