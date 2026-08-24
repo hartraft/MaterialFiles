@@ -113,6 +113,7 @@ dependencies {
     }
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation 'com.github.topjohnwu.libsu:service:5.2.2'
+    implementation 'io.minio:minio:8.6.0'
 }
 
 dependencies {
