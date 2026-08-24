@@ -64,7 +64,7 @@ class S3Server(
         }
 
     override fun createEditIntent(): Intent =
-        AddStorageDialogActivity::class.createIntent()
+        AddStorageDialogActivity::class.createIntent().putExtra(AddStorageDialogActivity.EXTRA_S3_SERVER, this)
 
     override fun toString(): String = "S3Server($endpoint/$bucket)"
 }

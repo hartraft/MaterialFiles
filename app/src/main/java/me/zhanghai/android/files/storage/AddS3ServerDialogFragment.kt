@@ -27,6 +27,9 @@ import me.zhanghai.android.files.provider.s3.S3FileSystemProvider
 import kotlin.math.roundToInt
 
 class AddS3ServerDialogFragment : AppCompatDialogFragment() {
+    private val server: S3Server?
+        get() = arguments?.getParcelable(ARG_SERVER)
+
     private lateinit var endpoint: EditText
     private lateinit var accessKey: EditText
     private lateinit var secretKey: EditText
@@ -37,18 +40,19 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val context = requireContext()
         val padding = (16 * resources.displayMetrics.density).roundToInt()
+        val existing = server
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(padding, padding, padding, padding)
         }
-        endpoint = edit(context, "Endpoint", "http://192.168.1.10:9000")
-        accessKey = edit(context, "Access key")
-        secretKey = edit(context, "Secret key").apply {
+        endpoint = edit(context, "Endpoint", existing?.endpoint ?: "http://192.168.1.10:9000")
+        accessKey = edit(context, "Access key", existing?.accessKey)
+        secretKey = edit(context, "Secret key", existing?.secretKey).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
-        bucket = edit(context, "Bucket")
-        path = edit(context, "Folder (optional)")
-        name = edit(context, "Display name (optional)")
+        bucket = edit(context, "Bucket", existing?.bucket)
+        path = edit(context, "Folder (optional)", existing?.relativePath)
+        name = edit(context, "Display name (optional)", existing?.customName)
         listOf(endpoint, accessKey, secretKey, bucket, path, name).forEach {
             content.addView(it, LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -57,15 +61,24 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
         }
         val scroll = ScrollView(context).apply { addView(content) }
         return MaterialAlertDialogBuilder(context, theme)
-            .setTitle("Add S3-compatible storage")
+            .setTitle(if (existing == null) "Add S3-compatible storage" else "Edit S3-compatible storage")
             .setView(scroll)
-            .setPositiveButton("Test and add", null)
-            .setNegativeButton("Cancel", null)
+            .setPositiveButton(if (existing == null) "Test and add" else "Test and save", null)
+            .setNegativeButton(if (existing == null) "Cancel" else "Remove", null)
             .create()
             .also { dialog ->
                 dialog.setOnShowListener {
                     dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
-                        testAndAdd(dialog)
+                        testAndSave(dialog)
+                    }
+                    if (existing != null) {
+                        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).setOnClickListener {
+                            Storages.remove(existing)
+                            S3FileSystemProvider.unregister(existing)
+                            Toast.makeText(requireContext(), "S3 storage removed", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                            requireActivity().finish()
+                        }
                     }
                 }
             }
@@ -77,7 +90,7 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
         setSingleLine(true)
     }
 
-    private fun testAndAdd(dialog: Dialog) {
+    private fun testAndSave(dialog: Dialog) {
         val endpointValue = endpoint.text.toString().trim()
             .let { if (it.startsWith("http://") || it.startsWith("https://")) it else "http://$it" }
             .trimEnd('/')
@@ -98,11 +111,11 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
                         .bucketExists(BucketExistsArgs.builder().bucket(bucketValue).build())
                 }
                 if (!ok) throw IllegalStateException("Bucket does not exist or is not accessible")
-                val server = S3Server(null, nameValue, endpointValue, accessKeyValue,
+                val updated = S3Server(server?.id, nameValue, endpointValue, accessKeyValue,
                     secretKeyValue, bucketValue, pathValue)
-                Storages.addOrReplace(server)
-                S3FileSystemProvider.register(server)
-                Toast.makeText(requireContext(), "Connected", Toast.LENGTH_SHORT).show()
+                Storages.addOrReplace(updated)
+                S3FileSystemProvider.register(updated)
+                Toast.makeText(requireContext(), if (server == null) "Connected" else "Saved", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
                 requireActivity().finish()
             } catch (e: Exception) {
@@ -111,6 +124,14 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
                     "S3 connection failed: ${e.message ?: e.javaClass.simpleName}",
                     Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    companion object {
+        private const val ARG_SERVER = "server"
+
+        fun newInstance(server: S3Server) = AddS3ServerDialogFragment().apply {
+            arguments = Bundle().apply { putParcelable(ARG_SERVER, server) }
         }
     }
 }
