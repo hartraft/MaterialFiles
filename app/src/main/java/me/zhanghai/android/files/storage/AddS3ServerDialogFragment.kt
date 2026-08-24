@@ -9,7 +9,6 @@ import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
-import android.os.Parcelable
 import android.text.InputType
 import android.view.ViewGroup
 import android.widget.EditText
@@ -23,7 +22,6 @@ import io.minio.MinioClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.parcelize.Parcelize
 import me.zhanghai.android.files.provider.s3.S3FileSystemProvider
 import kotlin.math.roundToInt
 
@@ -112,13 +110,10 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
                         .bucketExists(BucketExistsArgs.builder().bucket(bucketValue).build())
                 }
                 if (!ok) throw IllegalStateException("Bucket does not exist or is not accessible")
-                val updated = S3Server(existingId = server?.id, nameValue, endpointValue, accessKeyValue,
+                val updated = S3Server(server?.id, nameValue, endpointValue, accessKeyValue,
                     secretKeyValue, bucketValue, pathValue)
                 Storages.addOrReplace(updated)
                 S3FileSystemProvider.register(updated)
-                if (server != null && server!!.id != updated.id) {
-                    S3FileSystemProvider.unregister(server!!)
-                }
                 Toast.makeText(requireContext(), if (server == null) "Connected" else "Saved", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
                 requireActivity().finish()
@@ -130,9 +125,6 @@ class AddS3ServerDialogFragment : AppCompatDialogFragment() {
             }
         }
     }
-
-    private val existingId: Long?
-        get() = server?.id
 
     companion object {
         private const val ARG_SERVER = "server"
