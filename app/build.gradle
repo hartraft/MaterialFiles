@@ -114,7 +114,12 @@ dependencies {
     }
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation 'com.github.topjohnwu.libsu:service:5.2.2'
-    implementation 'io.minio:minio:8.6.0'
+    implementation('io.minio:minio:8.6.0') {
+        // minio transitively depends on org.bouncycastle:bcprov-jdk18on, which duplicates the
+        // project's direct bcprov-jdk15to18 (1.83). Exclude it so minio uses the project's
+        // BouncyCastle, matching the smbj/sshj/dcerpc/jcifs-ng handling above.
+        exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+    }
 }
 
 dependencies {
