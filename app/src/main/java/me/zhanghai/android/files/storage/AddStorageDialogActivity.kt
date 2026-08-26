@@ -7,6 +7,7 @@ package me.zhanghai.android.files.storage
 
 import android.os.Bundle
 import android.view.View
+import androidx.fragment.app.add
 import androidx.fragment.app.commit
 import me.zhanghai.android.files.app.AppActivity
 

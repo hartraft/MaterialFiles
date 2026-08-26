@@ -207,7 +207,7 @@ object S3FileSystemProvider : FileSystemProvider(), PathObservableProvider, Sear
                 val relative = if (prefix.isEmpty()) key else key.removePrefix(prefix)
                 if (relative.contains('/')) continue
                 val child = path.resolve(relative)
-                if (filter.accept(child)) paths += child
+                if (filter.accept(child)) paths.add(child)
             }
         } catch (e: Exception) {
             throw IOException("Unable to list S3 directory ${path.objectKey}", e)
@@ -378,8 +378,8 @@ internal class S3FileSystem(
 
 internal class S3Path : ByteStringListPath<S3Path> {
     val fileSystem: S3FileSystem
-    constructor(fileSystem: S3FileSystem, path: ByteString) : super('/', path) { this.fileSystem = fileSystem }
-    private constructor(fileSystem: S3FileSystem, absolute: Boolean, segments: List<ByteString>) : super('/', absolute, segments) { this.fileSystem = fileSystem }
+    constructor(fileSystem: S3FileSystem, path: ByteString) : super('/'.code.toByte(), path) { this.fileSystem = fileSystem }
+    private constructor(fileSystem: S3FileSystem, absolute: Boolean, segments: List<ByteString>) : super('/'.code.toByte(), absolute, segments) { this.fileSystem = fileSystem }
     override fun isPathAbsolute(path: ByteString): Boolean = path.isNotEmpty() && path[0] == '/'.code.toByte()
     override fun createPath(path: ByteString): S3Path = S3Path(fileSystem, path)
     override fun createPath(absolute: Boolean, segments: List<ByteString>): S3Path = S3Path(fileSystem, absolute, segments)
@@ -462,7 +462,7 @@ private class S3StreamingByteChannel(
     private fun checkOpen() { check(open) { "Channel is closed" } }
 }
 
-private class S3Attributes(
+internal class S3Attributes(
     private val directory: Boolean,
     private val objectSize: Long,
     private val modifiedMillis: Long
