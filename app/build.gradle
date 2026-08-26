@@ -119,6 +119,12 @@ dependencies {
         // project's direct bcprov-jdk15to18 (1.83). Exclude it so minio uses the project's
         // BouncyCastle, matching the smbj/sshj/dcerpc/jcifs-ng handling above.
         exclude group: 'org.bouncycastle', module: 'bcprov-jdk18on'
+        // snappy-java's bytecode uses invoke-polymorphic method handles
+        // (SnappyFramed.<clinit>), which D8 cannot desugar below minSdk 26. The project
+        // targets minSdk 23, so snappy-java cannot be included. minio only uses it for
+        // optional response decompression, not for S3 request signing, so it is safe to
+        // exclude; minio falls back to uncompressed/non-snappy transfers.
+        exclude group: 'org.xerial.snappy', module: 'snappy-java'
     }
 }
 
